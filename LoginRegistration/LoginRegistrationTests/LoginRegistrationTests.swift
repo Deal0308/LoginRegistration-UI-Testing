@@ -17,7 +17,7 @@ final class LoginRegistrationTests: XCTestCase {
 
     func testValidEmailReturnsTrue() {
         // Arrange
-        let email = "student@test.com"
+        let email = "test@mail.com"
 
         // Act
         let result = ValidationManager.isValidEmail(email)
@@ -39,7 +39,7 @@ final class LoginRegistrationTests: XCTestCase {
 
     func testValidPasswordReturnsTrue() {
         // Arrange
-        let password = "Student123"
+        let password = "test1234"
 
         // Act
         let result = ValidationManager.isValidPassword(password)
@@ -48,26 +48,26 @@ final class LoginRegistrationTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testEmptyLoginShowsError() {
+    func testEmptyLoginShowsError() async {
         // Arrange
-        let service = AuthenticationService()
-        let viewModel = LoginViewModel(authenticationService: service)
+        let service = AuthService()
+        let viewModel = LoginViewModel(authService: service, sessionStore: MemorySessionStore())
 
         // Act
-        viewModel.login()
+        await viewModel.login()
 
         // Assert
-        XCTAssertEqual(viewModel.errorMessage, "Email and password are required.")
-        XCTAssertNil(service.currentUser)
+        XCTAssertEqual(viewModel.errorMessage, "Invalid email or password")
+        XCTAssertNil(viewModel.loggedInUser)
     }
 
     func testPasswordMismatchReturnsError() {
         // Arrange
-        let service = AuthenticationService()
-        let viewModel = RegistrationViewModel(authenticationService: service)
+        let service = AuthService()
+        let viewModel = RegistrationViewModel(registrationService: service)
         viewModel.username = "Taylor"
         viewModel.email = "taylor@test.com"
-        viewModel.password = "Student123"
+        viewModel.password = "test1234"
         viewModel.confirmPassword = "Student456"
 
         // Act
@@ -75,43 +75,43 @@ final class LoginRegistrationTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(viewModel.errorMessage, "Passwords must match.")
-        XCTAssertNil(service.currentUser)
+        XCTAssertNil(viewModel.registeredUser)
     }
 
-    func testSuccessfulLogin() {
+    func testSuccessfulLogin() async {
         // Arrange
-        let service = AuthenticationService()
-        let viewModel = LoginViewModel(authenticationService: service)
-        viewModel.email = "student@test.com"
-        viewModel.password = "Student123"
+        let service = AuthService()
+        let viewModel = LoginViewModel(authService: service, sessionStore: MemorySessionStore())
+        viewModel.email = "test@mail.com"
+        viewModel.password = "test1234"
 
         // Act
-        viewModel.login()
+        await viewModel.login()
 
         // Assert
-        XCTAssertEqual(service.currentUser?.username, "Student")
-        XCTAssertEqual(viewModel.errorMessage, "")
+        XCTAssertEqual(viewModel.loggedInUser?.name, "Example")
+        XCTAssertNil(viewModel.errorMessage)
     }
 
-    func testIncorrectPasswordFailsLogin() {
+    func testIncorrectPasswordFailsLogin() async {
         // Arrange
-        let service = AuthenticationService()
-        let viewModel = LoginViewModel(authenticationService: service)
-        viewModel.email = "student@test.com"
+        let service = AuthService()
+        let viewModel = LoginViewModel(authService: service, sessionStore: MemorySessionStore())
+        viewModel.email = "test@mail.com"
         viewModel.password = "Wrong123"
 
         // Act
-        viewModel.login()
+        await viewModel.login()
 
         // Assert
-        XCTAssertEqual(viewModel.errorMessage, "Incorrect email or password.")
-        XCTAssertNil(service.currentUser)
+        XCTAssertEqual(viewModel.errorMessage, "Invalid email or password")
+        XCTAssertNil(viewModel.loggedInUser)
     }
 
     func testSuccessfulRegistration() {
         // Arrange
-        let service = AuthenticationService()
-        let viewModel = RegistrationViewModel(authenticationService: service)
+        let service = AuthService()
+        let viewModel = RegistrationViewModel(registrationService: service)
         viewModel.username = "Taylor"
         viewModel.email = "taylor@test.com"
         viewModel.password = "Taylor123"
@@ -121,15 +121,15 @@ final class LoginRegistrationTests: XCTestCase {
         viewModel.register()
 
         // Assert
-        XCTAssertEqual(service.currentUser?.username, "Taylor")
-        XCTAssertEqual(service.currentUser?.email, "taylor@test.com")
+        XCTAssertEqual(viewModel.registeredUser?.name, "Taylor")
+        XCTAssertEqual(viewModel.registeredUser?.email, "taylor@test.com")
         XCTAssertEqual(viewModel.errorMessage, "")
     }
 
     func testEmptyUsernameFailsRegistration() {
         // Arrange
-        let service = AuthenticationService()
-        let viewModel = RegistrationViewModel(authenticationService: service)
+        let service = AuthService()
+        let viewModel = RegistrationViewModel(registrationService: service)
         viewModel.username = ""
         viewModel.email = "taylor@test.com"
         viewModel.password = "Taylor123"
@@ -140,6 +140,6 @@ final class LoginRegistrationTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(viewModel.errorMessage, "Username is required.")
-        XCTAssertNil(service.currentUser)
+        XCTAssertNil(viewModel.registeredUser)
     }
 }

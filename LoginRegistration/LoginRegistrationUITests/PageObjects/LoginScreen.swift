@@ -4,10 +4,10 @@ import XCTest
 struct LoginScreen {
     let app: XCUIApplication
 
-    var emailField: XCUIElement { app.textFields["emailField"] }
-    var passwordField: XCUIElement { app.secureTextFields["passwordField"] }
-    var loginButton: XCUIElement { app.buttons["loginButton"] }
-    var rememberMeSwitch: XCUIElement { app.switches["rememberMeToggle"] }
+    var emailField: XCUIElement { app.textFields["email_field"] }
+    var passwordField: XCUIElement { app.secureTextFields["password_field"] }
+    var loginButton: XCUIElement { app.buttons["login_button"] }
+    var rememberMeSwitch: XCUIElement { app.switches["remember_me_toggle"] }
     var errorLabel: XCUIElement { app.staticTexts["error_label"] }
 
     var emailValue: String {
@@ -44,8 +44,15 @@ struct LoginScreen {
     }
 
     func submit() {
-        // A partly exposed button can be hittable while its center is under the keyboard.
-        if app.keyboards.firstMatch.exists || !loginButton.isHittable {
+        let keyboard = app.keyboards.firstMatch
+        if keyboard.exists {
+            let doneButton = app.buttons["dismiss_keyboard_button"]
+            XCTAssertTrue(doneButton.waitForExistence(timeout: 5), "The keyboard should offer Done.")
+            doneButton.tap()
+            let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyboard)
+            XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed, "Done should dismiss the keyboard.")
+        }
+        if !loginButton.isHittable {
             app.scrollViews.firstMatch.swipeUp()
         }
         loginButton.tap()

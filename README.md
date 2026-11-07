@@ -1,56 +1,72 @@
-# LoginRegistration UI Testing Assignment
+# LoginKit Class Project with Personal Touches
 
-SwiftUI login and registration app using MVVM, XCTest, XCUITest Page Objects, and GitHub Actions.
+This MVVM SwiftUI app follows Professor Andres de la Cruz's LoginKit login architecture and behavior, while retaining Michael Deal's gradient design, material cards, SF Symbols, password visibility control, and registration feature.
 
-- Public repository: https://github.com/Deal0308/LoginRegistration-UI-Testing
-- Course: MDI1 117, iOS Automated Testing, Chapter 10
-- Assignment: Class 4 UI Testing with XCUITest and CI Integration
+Class source: [Andres-SDGKU/MDI1-117-Ch10-LoginKit](https://github.com/Andres-SDGKU/MDI1-117-Ch10-LoginKit/tree/048f91866ec423d74184990bc911c9e02070f769). The comparison is pinned to commit `048f91866ec423d74184990bc911c9e02070f769` on the professor's main branch.
 
-## Open and run
+Student repository: https://github.com/Deal0308/LoginRegistration-UI-Testing
 
-Open `LoginRegistration/LoginRegistration.xcodeproj`, select the shared **LoginRegistration** scheme and an available iPhone simulator, then press **Command-U**. The scheme runs all 14 unit tests and 8 UI tests serially.
+## Run the app and tests
 
-Demo login: `student@test.com` / `Student123`. These are sample credentials for the local, in-memory service. Registration lasts for the current app session. Remember Me stores only the email, never the password or a logged-in session.
+Open `LoginRegistration/LoginRegistration.xcodeproj`, select the shared **LoginRegistration** scheme and an available iPhone simulator, then press **Command-R** to run or **Command-U** to test. **Command-6** opens the Test navigator.
 
-## MVVM structure
+The class demo account is:
 
-- `Models/User.swift`: account model.
-- `Services/AuthenticationService.swift`: in-memory authentication.
-- `Services/LoginPreferences.swift`: injectable email preferences.
-- `ViewModels/`: login and registration state and validation.
-- `Views/`: login, registration, dashboard, and reusable controls.
-- `LoginRegistrationUITests/PageObjects/`: `LoginScreen`, `DashboardScreen`, and `RegistrationScreen` centralize UI interactions and accessibility identifiers.
+```text
+Email: test@mail.com
+Password: test1234
+Dashboard: Welcome, Example
+```
 
-## UI coverage
+These are demonstration credentials for the local service. Remember Me saves only the email, never the password or an authenticated session. Registered accounts are available only during the current app session.
 
-| Test | Expected behavior |
+## What matches the professor's code
+
+| Part | Class behavior retained |
 | --- | --- |
-| Invalid login | `error_label` appears and dashboard remains absent |
-| Successful login | Dashboard appears |
-| Logout | Returns to login; named activities and a kept screenshot attachment |
-| Remembered email | Email survives termination and relaunch |
-| Remember Me off | Saved email is removed and remains absent after relaunch |
-| Password correction | Correct only the password after failure, then log in |
-| Registration | Register, reach dashboard, and log out |
-| Launch smoke | Login controls appear; screenshot attachment retained |
+| `User` | Hashable model containing `email` and `name` |
+| `AuthServiceProtocol` | `login(email:password:) async throws -> User` |
+| `AuthService` | Class demo credentials, 400 ms simulated request, `AuthError.invalidCredentials` |
+| Error text | `Invalid email or password` |
+| `SessionStoring` / `SessionStore` | Read/write `rememberedEmail`, `clear()`, injectable UserDefaults, and the `rememberedEmail` storage key |
+| `LoginViewModel` | Injected services, async login, loading state, optional error, and `loggedInUser` |
+| Logout | Clears the user and password; keeps the email only when Remember Me is on |
+| Navigation | NavigationStack and `navigationDestination(item: $viewModel.loggedInUser)` with `DashboardView` |
+| Accessibility | `email_field`, `password_field`, `remember_me_toggle`, `login_button`, `loading_indicator`, `error_label`, `welcome_label`, `logout_button` |
+| UI reset | Initial launch with `-UITesting-Reset` clears the saved email |
 
-Each test initially launches with `-UITesting` and `-UITesting-Reset`. Test preferences use a dedicated UserDefaults suite. Persistence checks terminate and relaunch with only `-UITesting`, preserving the saved email within the test. There are no fixed sleeps or test-order dependencies.
+The app retains its `LoginRegistration` Xcode project and scheme names so existing submission links and the class workflow project path remain valid.
+
+## Personal additions
+
+- Gradient background, material cards, icons, and password visibility control.
+- Registration is an extension through `RegistrationServicing`; it does not change the class login protocol.
+- Turning Remember Me off immediately clears saved email, completing assignment exercise 5.
+- Keyboard focus and an accessible Done button keep login usable with the software keyboard.
+- UI tests use a dedicated preferences suite so resetting a test does not affect normal app preferences.
+- Protocols explicitly use the main actor for this SwiftUI app.
+
+## Test coverage
+
+The shared scheme includes 20 unit tests and 8 UI tests. Unit coverage includes the class credentials and error, injected authentication, the exact session key, both logout modes, registration, validation, and Remember Me.
+
+`LoginScreen`, `DashboardScreen`, and `RegistrationScreen` Page Objects centralize UI interactions. The UI suite covers invalid and successful login, logout, remembered email after relaunch, turning Remember Me off, correcting only a wrong password, registration, and launch. The logout test uses named activities and a screenshot attachment. Login, dashboard, and error screenshots are also retained as test attachments.
+
+Each independent test initially launches with `-UITesting` and `-UITesting-Reset`. Persistence checks remove only Reset before relaunch. Page Objects dismiss the software keyboard with the app's Done control and wait for its disappearance before tapping Log In. There are no fixed sleeps in UI tests.
+
+The professor's main branch has generated starter test placeholders. This project implements the exercise requirements instead of copying those placeholders.
 
 ## Class workflow
 
-The instructor's original file was retrieved from the repository linked by the Canvas Class 4 slides:
-
-https://github.com/Andres-SDGKU/MDI1-117-Ch10-LoginKit/blob/e6dac8585a21c69d78c481571dba8d029fd5cfd9/.github/workflows/ios-ci.yml
-
-`.github/workflows/ios-ci.yml` is at this repository's root, beside the `LoginRegistration` project folder. Only the two project-dependent lines were changed:
+The original instructor workflow came from the [class repository](https://github.com/Andres-SDGKU/MDI1-117-Ch10-LoginKit/blob/e6dac8585a21c69d78c481571dba8d029fd5cfd9/.github/workflows/ios-ci.yml). It is saved at `.github/workflows/ios-ci.yml`, beside the project folder. Only these two project-dependent lines differ:
 
 ```text
 -project LoginRegistration/LoginRegistration.xcodeproj
 -scheme "LoginRegistration"
 ```
 
-The shared scheme is committed. The class workflow requests the `xcode-27` runner label and `/Applications/Xcode_27.0.app/Contents/Developer`. It triggers on pushes and pull requests to `main`, and supports manual dispatch. Actual CI status is available in the repository's Actions tab.
+The pipeline runs on pushes and pull requests to main, supports manual dispatch, and uploads the `.xcresult` test bundle. Actual run results are recorded in the Actions tab and the assignment report.
 
-## Local validation
+## Attribution
 
-The initial complete local run passed all 22 tests: 14 unit tests and 8 UI tests, with zero failures. Evidence and the report are saved in the assignment delivery folder.
+The login model, service interfaces, session storage, async view-model flow, navigation pattern, identifiers, and sample account are adapted from Andres de la Cruz's course LoginKit project. The source comments mark these adaptations. The styling, registration extension, completed tests, and assignment documentation are Michael Deal's personalized version with AI assistance disclosed in the report.

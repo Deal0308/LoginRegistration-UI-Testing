@@ -5,7 +5,7 @@ struct DashboardScreen {
     let app: XCUIApplication
 
     var welcomeLabel: XCUIElement { app.staticTexts["welcome_label"] }
-    var logoutButton: XCUIElement { app.buttons["logoutButton"] }
+    var logoutButton: XCUIElement { app.buttons["logout_button"] }
 
     func waitUntilVisible(file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(welcomeLabel.waitForExistence(timeout: 5), "Dashboard should open", file: file, line: line)

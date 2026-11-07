@@ -1,3 +1,4 @@
+// Based on Andres de la Cruz's LoginKit, commit 048f918.
 import Combine
 import Foundation
 
@@ -5,55 +6,58 @@ import Foundation
 final class LoginViewModel: ObservableObject {
     @Published var email = ""
     @Published var password = ""
-    @Published var errorMessage = ""
-    @Published var isLoading = false
     @Published var rememberMe = false {
         didSet {
-            if !rememberMe { preferences.clear() }
+            // Exercise 5: turning Remember Me off also clears the stored email immediately.
+            if !rememberMe { sessionStore.clear() }
+        }
+    }
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    @Published var loggedInUser: User?
+
+    private let authService: AuthServiceProtocol
+    private var sessionStore: SessionStoring
+
+    init(authService: AuthServiceProtocol, sessionStore: SessionStoring? = nil) {
+        let sessionStore = sessionStore ?? SessionStore()
+        self.authService = authService
+        self.sessionStore = sessionStore
+        if let rememberedEmail = sessionStore.rememberedEmail {
+            email = rememberedEmail
+            rememberMe = true
         }
     }
 
-    private let authenticationService: AuthenticationService
-    private let preferences: LoginPreferences
-
-    init(authenticationService: AuthenticationService, preferences: LoginPreferences = LoginPreferences()) {
-        self.authenticationService = authenticationService
-        self.preferences = preferences
-        let rememberedEmail = preferences.rememberedEmail
-        email = rememberedEmail ?? ""
-        rememberMe = rememberedEmail != nil
-    }
-
-    var canAttemptLogin: Bool {
-        !email.isEmpty && !password.isEmpty
-    }
-
-    func login() {
-        errorMessage = ""
-
-        guard !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !password.isEmpty else {
-            errorMessage = "Email and password are required."
-            return
-        }
-
-        guard ValidationManager.isValidEmail(email) else {
-            errorMessage = "Enter a valid email address."
-            return
-        }
-
+    func login() async {
+        errorMessage = nil
         isLoading = true
         defer { isLoading = false }
 
-        guard authenticationService.login(email: email, password: password) else {
-            errorMessage = "Incorrect email or password."
-            return
+        do {
+            let user = try await authService.login(email: email, password: password)
+            loggedInUser = user
+            if rememberMe {
+                sessionStore.rememberedEmail = email
+            } else {
+                sessionStore.clear()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
         }
+    }
 
-        if rememberMe {
-            preferences.remember(email: email)
-        } else {
-            preferences.clear()
-        }
+    func logout() {
+        loggedInUser = nil
+        password = ""
+        if !rememberMe { email = "" }
+    }
+
+    // Personal extension: registration joins the same view-model-owned session.
+    func completeRegistration(with user: User) {
+        email = user.email
+        password = ""
+        errorMessage = nil
+        loggedInUser = user
     }
 }

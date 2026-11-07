@@ -10,7 +10,7 @@ import Foundation
 
 @main
 struct LoginRegistrationApp: App {
-    private let preferences: LoginPreferences
+    private let sessionStore: SessionStore
 
     init() {
         let arguments = ProcessInfo.processInfo.arguments
@@ -18,16 +18,16 @@ struct LoginRegistrationApp: App {
         let defaults = isUITesting
             ? UserDefaults(suiteName: "com.example.LoginRegistration.UITesting")!
             : UserDefaults.standard
-        let preferences = LoginPreferences(defaults: defaults)
+        let sessionStore = SessionStore(defaults: defaults)
         if arguments.contains("-UITesting-Reset") {
-            preferences.clear()
+            sessionStore.clear()
         }
-        self.preferences = preferences
+        self.sessionStore = sessionStore
     }
 
     var body: some Scene {
         WindowGroup {
-            ContentView(preferences: preferences)
+            ContentView(sessionStore: sessionStore)
         }
     }
 }

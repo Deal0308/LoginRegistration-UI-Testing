@@ -1,12 +1,18 @@
 import SwiftUI
 
+@MainActor
 struct LoginView: View {
     @StateObject private var viewModel: LoginViewModel
-    private let authenticationService: AuthenticationService
+    private enum Field: Hashable { case email, password }
+    @FocusState private var focusedField: Field?
+    @State private var isPasswordVisible = false
+    @State private var isRegistering = false
+    private let registrationService: RegistrationServicing?
 
-    init(authenticationService: AuthenticationService, preferences: LoginPreferences = LoginPreferences()) {
-        self.authenticationService = authenticationService
-        _viewModel = StateObject(wrappedValue: LoginViewModel(authenticationService: authenticationService, preferences: preferences))
+    init(authService: AuthServiceProtocol? = nil, sessionStore: SessionStoring? = nil) {
+        let authService = authService ?? AuthService()
+        _viewModel = StateObject(wrappedValue: LoginViewModel(authService: authService, sessionStore: sessionStore))
+        registrationService = authService as? RegistrationServicing
     }
 
     var body: some View {
@@ -17,71 +23,122 @@ struct LoginView: View {
                 ScrollView {
                     VStack(spacing: 28) {
                         LogoHeader(
-                            title: "Welcome Back",
+                            title: "LoginKit",
                             subtitle: "Sign in to continue to your student account."
                         )
                         .padding(.top, 36)
 
                         VStack(spacing: 16) {
-                            AppTextField(
-                                title: "Email",
-                                systemImage: "envelope.fill",
-                                text: $viewModel.email,
-                                keyboardType: .emailAddress,
-                                textContentType: .username,
-                                accessibilityIdentifier: "emailField"
-                            )
-
-                            SecureInputField(
-                                title: "Password",
-                                text: $viewModel.password,
-                                accessibilityIdentifier: "passwordField"
-                            )
+                            emailInput
+                            passwordInput
 
                             Toggle("Remember Me", isOn: $viewModel.rememberMe)
-                                .accessibilityIdentifier("rememberMeToggle")
+                                .accessibilityIdentifier("remember_me_toggle")
 
-                            Text("Forgot password?")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.blue)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-
-                            ValidationMessageView(
-                                message: viewModel.errorMessage,
-                                accessibilityIdentifier: "error_label"
-                            )
+                            if let errorMessage = viewModel.errorMessage {
+                                Text(errorMessage)
+                                    .font(.footnote.weight(.medium))
+                                    .foregroundStyle(.red)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .accessibilityIdentifier("error_label")
+                            }
 
                             PrimaryButton(
                                 title: "Log In",
                                 systemImage: "arrow.right.circle.fill",
-                                isLoading: viewModel.isLoading,
-                                action: viewModel.login
-                            )
-                            .accessibilityIdentifier("loginButton")
+                                isLoading: viewModel.isLoading
+                            ) {
+                                focusedField = nil
+                                Task { await viewModel.login() }
+                            }
+                            .accessibilityIdentifier("login_button")
                         }
                         .padding(22)
                         .background(.thinMaterial)
                         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                         .shadow(color: .black.opacity(0.12), radius: 24, y: 12)
 
-                        NavigationLink {
-                            RegistrationView(authenticationService: authenticationService)
-                        } label: {
-                            Text("Create a new account")
+                        if registrationService != nil {
+                            Button("Create a new account") { isRegistering = true }
                                 .font(.callout.weight(.semibold))
+                                .accessibilityIdentifier("registrationNavigationButton")
                         }
-                        .accessibilityIdentifier("registrationNavigationButton")
                     }
                     .padding(.horizontal, 22)
                     .padding(.bottom, 32)
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { focusedField = nil }
+                        .accessibilityIdentifier("dismiss_keyboard_button")
+                }
+            }
+            .navigationDestination(item: $viewModel.loggedInUser) { user in
+                DashboardView(user: user, onLogout: { viewModel.logout() })
+            }
+            .sheet(isPresented: $isRegistering) {
+                if let registrationService {
+                    NavigationStack {
+                        RegistrationView(registrationService: registrationService) { user in
+                            isRegistering = false
+                            viewModel.completeRegistration(with: user)
+                        }
+                    }
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private var emailInput: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "envelope.fill").foregroundStyle(.secondary).frame(width: 22)
+            TextField("Email", text: $viewModel.email)
+                .keyboardType(.emailAddress)
+                .textContentType(.username)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .focused($focusedField, equals: .email)
+                .accessibilityIdentifier("email_field")
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 52)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var passwordInput: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lock.fill").foregroundStyle(.secondary).frame(width: 22)
+            Group {
+                if isPasswordVisible {
+                    TextField("Password", text: $viewModel.password)
+                } else {
+                    SecureField("Password", text: $viewModel.password)
+                }
+            }
+            .textContentType(.password)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .focused($focusedField, equals: .password)
+            .accessibilityIdentifier("password_field")
+
+            Button { isPasswordVisible.toggle() } label: {
+                Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+            }
+            .accessibilityLabel(isPasswordVisible ? "Hide password" : "Show password")
+            .accessibilityIdentifier("passwordVisibilityButton")
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 52)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
 #Preview {
-    LoginView(authenticationService: AuthenticationService())
+    LoginView()
 }

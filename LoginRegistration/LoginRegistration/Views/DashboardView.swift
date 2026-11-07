@@ -1,8 +1,8 @@
 import SwiftUI
 
-struct HomeView: View {
+struct DashboardView: View {
     let user: User
-    let logout: () -> Void
+    let onLogout: () -> Void
     @State private var iconScale = 0.72
 
     var body: some View {
@@ -24,13 +24,13 @@ struct HomeView: View {
                         }
                         .accessibilityLabel("Successful login")
 
-                    Text("Welcome, \(user.username)!")
+                    Text("Welcome, \(user.name)")
                         .font(.largeTitle.bold())
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("welcome_label")
 
                     VStack(spacing: 8) {
-                        Text(user.username)
+                        Text(user.name)
                             .font(.title3.weight(.semibold))
                         Text(user.email)
                             .font(.subheadline)
@@ -45,8 +45,8 @@ struct HomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                 .shadow(color: .black.opacity(0.12), radius: 24, y: 12)
 
-                Button(action: logout) {
-                    Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
+                Button(action: onLogout) {
+                    Label("Log Out", systemImage: "rectangle.portrait.and.arrow.right")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
@@ -55,15 +55,17 @@ struct HomeView: View {
                 .foregroundStyle(.primary)
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .accessibilityIdentifier("logoutButton")
+                .accessibilityIdentifier("logout_button")
 
                 Spacer(minLength: 24)
             }
             .padding(.horizontal, 22)
         }
+        .navigationTitle("Dashboard")
+        .navigationBarBackButtonHidden(true)
     }
 }
 
 #Preview {
-    HomeView(user: User(username: "Student", email: "student@test.com", password: "Student123"), logout: {})
+    DashboardView(user: User(email: "test@mail.com", name: "Example"), onLogout: {})
 }

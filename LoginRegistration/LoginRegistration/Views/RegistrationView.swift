@@ -3,9 +3,11 @@ import SwiftUI
 struct RegistrationView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: RegistrationViewModel
+    private let onRegistered: (User) -> Void
 
-    init(authenticationService: AuthenticationService) {
-        _viewModel = StateObject(wrappedValue: RegistrationViewModel(authenticationService: authenticationService))
+    init(registrationService: RegistrationServicing, onRegistered: @escaping (User) -> Void) {
+        _viewModel = StateObject(wrappedValue: RegistrationViewModel(registrationService: registrationService))
+        self.onRegistered = onRegistered
     }
 
     var body: some View {
@@ -78,12 +80,15 @@ struct RegistrationView: View {
             }
             .scrollDismissesKeyboard(.interactively)
         }
+        .onChange(of: viewModel.registeredUser) { _, user in
+            if let user { onRegistered(user) }
+        }
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 #Preview {
     NavigationStack {
-        RegistrationView(authenticationService: AuthenticationService())
+        RegistrationView(registrationService: AuthService(), onRegistered: { _ in })
     }
 }

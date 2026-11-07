@@ -9,11 +9,12 @@ final class RegistrationViewModel: ObservableObject {
     @Published var confirmPassword = ""
     @Published var errorMessage = ""
     @Published var isLoading = false
+    @Published var registeredUser: User?
 
-    private let authenticationService: AuthenticationService
+    private let registrationService: RegistrationServicing
 
-    init(authenticationService: AuthenticationService) {
-        self.authenticationService = authenticationService
+    init(registrationService: RegistrationServicing) {
+        self.registrationService = registrationService
     }
 
     func register() {
@@ -42,9 +43,10 @@ final class RegistrationViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        guard authenticationService.register(username: username, email: email, password: password) else {
-            errorMessage = "An account with this email already exists."
-            return
+        do {
+            registeredUser = try registrationService.register(username: username, email: email, password: password)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 }

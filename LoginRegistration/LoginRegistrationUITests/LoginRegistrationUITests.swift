@@ -14,8 +14,9 @@ final class LoginRegistrationUITests: XCTestCase {
         loginScreen.login(email: "testerror@mail.com", password: "1234test")
 
         XCTAssertTrue(loginScreen.errorLabel.waitForExistence(timeout: 5))
-        XCTAssertEqual(loginScreen.errorLabel.label, "Incorrect email or password.")
+        XCTAssertEqual(loginScreen.errorLabel.label, "Invalid email or password")
         XCTAssertFalse(dashboardScreen.welcomeLabel.exists)
+        attachScreenshot(named: "Invalid credentials error", app: app)
     }
 
     @MainActor
@@ -24,10 +25,12 @@ final class LoginRegistrationUITests: XCTestCase {
         let loginScreen = LoginScreen(app: app)
         let dashboardScreen = DashboardScreen(app: app)
 
-        loginScreen.login(email: "student@test.com", password: "Student123")
+        loginScreen.login(email: "test@mail.com", password: "test1234")
 
         dashboardScreen.waitUntilVisible()
         XCTAssertFalse(loginScreen.errorLabel.exists)
+        XCTAssertEqual(dashboardScreen.welcomeLabel.label, "Welcome, Example")
+        attachScreenshot(named: "Successful login dashboard", app: app)
     }
 
     @MainActor
@@ -37,12 +40,12 @@ final class LoginRegistrationUITests: XCTestCase {
         let dashboardScreen = DashboardScreen(app: app)
 
         XCTContext.runActivity(named: "Sign in with the demo account") { _ in
-            loginScreen.login(email: "student@test.com", password: "Student123")
+            loginScreen.login(email: "test@mail.com", password: "test1234")
             dashboardScreen.waitUntilVisible()
         }
 
         XCTContext.runActivity(named: "Log out from the dashboard") { _ in
-            dashboardScreen.logout()
+            _ = dashboardScreen.logout()
         }
 
         XCTContext.runActivity(named: "Verify the login screen and attach evidence") { activity in
@@ -60,14 +63,14 @@ final class LoginRegistrationUITests: XCTestCase {
         let app = launchFreshApp()
         let loginScreen = LoginScreen(app: app)
         loginScreen.setRememberMe(true)
-        loginScreen.login(email: "student@test.com", password: "Student123")
+        loginScreen.login(email: "test@mail.com", password: "test1234")
         DashboardScreen(app: app).waitUntilVisible()
 
         relaunchPreservingData(app)
 
         let relaunchedLogin = LoginScreen(app: app)
         relaunchedLogin.waitUntilVisible()
-        XCTAssertEqual(relaunchedLogin.emailValue, "student@test.com")
+        XCTAssertEqual(relaunchedLogin.emailValue, "test@mail.com")
         XCTAssertEqual(relaunchedLogin.rememberMeSwitch.value as? String, "1")
         XCTAssertFalse(DashboardScreen(app: app).welcomeLabel.exists)
     }
@@ -77,11 +80,11 @@ final class LoginRegistrationUITests: XCTestCase {
         let app = launchFreshApp()
         let loginScreen = LoginScreen(app: app)
         loginScreen.setRememberMe(true)
-        loginScreen.login(email: "student@test.com", password: "Student123")
+        loginScreen.login(email: "test@mail.com", password: "test1234")
         let dashboardScreen = DashboardScreen(app: app)
         dashboardScreen.waitUntilVisible()
         let returnedLogin = dashboardScreen.logout()
-        XCTAssertEqual(returnedLogin.emailValue, "student@test.com")
+        XCTAssertEqual(returnedLogin.emailValue, "test@mail.com")
 
         returnedLogin.setRememberMe(false)
         relaunchPreservingData(app)
@@ -97,14 +100,14 @@ final class LoginRegistrationUITests: XCTestCase {
         let app = launchFreshApp()
         let loginScreen = LoginScreen(app: app)
         let dashboardScreen = DashboardScreen(app: app)
-        loginScreen.login(email: "student@test.com", password: "Wrong123")
+        loginScreen.login(email: "test@mail.com", password: "Wrong123")
         XCTAssertTrue(loginScreen.errorLabel.waitForExistence(timeout: 5))
         XCTAssertFalse(dashboardScreen.welcomeLabel.exists)
-        XCTAssertEqual(loginScreen.emailValue, "student@test.com")
+        XCTAssertEqual(loginScreen.emailValue, "test@mail.com")
 
         // Correct only the password; the email field is never edited again.
-        loginScreen.setPassword("Student123")
-        XCTAssertEqual(loginScreen.emailValue, "student@test.com")
+        loginScreen.setPassword("test1234")
+        XCTAssertEqual(loginScreen.emailValue, "test@mail.com")
         loginScreen.submit()
 
         dashboardScreen.waitUntilVisible()
@@ -120,8 +123,16 @@ final class LoginRegistrationUITests: XCTestCase {
 
         let dashboard = DashboardScreen(app: app)
         dashboard.waitUntilVisible()
-        XCTAssertEqual(dashboard.welcomeLabel.label, "Welcome, Alex!")
+        XCTAssertEqual(dashboard.welcomeLabel.label, "Welcome, Alex")
         dashboard.logout().waitUntilVisible()
+    }
+
+    @MainActor
+    private func attachScreenshot(named name: String, app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor

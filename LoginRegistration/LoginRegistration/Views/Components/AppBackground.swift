@@ -7,6 +7,6 @@ struct AppBackground: View {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
-        .ignoresSafeArea()
+        .ignoresSafeArea(.container)
     }
 }

@@ -1,26 +1,15 @@
 import SwiftUI
 
+@MainActor
 struct ContentView: View {
-    @StateObject private var authenticationService = AuthenticationService()
-    private let preferences: LoginPreferences
+    private let sessionStore: SessionStoring
 
-    init(preferences: LoginPreferences = LoginPreferences()) {
-        self.preferences = preferences
+    init(sessionStore: SessionStoring? = nil) {
+        self.sessionStore = sessionStore ?? SessionStore()
     }
 
     var body: some View {
-        Group {
-            if let user = authenticationService.currentUser {
-                HomeView(user: user) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                        authenticationService.logout()
-                    }
-                }
-            } else {
-                LoginView(authenticationService: authenticationService, preferences: preferences)
-            }
-        }
-        .animation(.easeInOut(duration: 0.22), value: authenticationService.currentUser)
+        LoginView(sessionStore: sessionStore)
     }
 }
 

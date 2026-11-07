@@ -1,15 +1,7 @@
 import Foundation
 
-struct User: Identifiable, Equatable {
-    let id: UUID
-    let username: String
+// Matches the LoginKit user model used in class.
+struct User: Hashable {
     let email: String
-    let password: String
-
-    init(id: UUID = UUID(), username: String, email: String, password: String) {
-        self.id = id
-        self.username = username
-        self.email = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        self.password = password
-    }
+    let name: String
 }

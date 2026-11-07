@@ -12,6 +12,7 @@ struct PrimaryButton: View {
                 if isLoading {
                     ProgressView()
                         .tint(.white)
+                        .accessibilityIdentifier("loading_indicator")
                 } else {
                     Image(systemName: systemImage)
                 }
@@ -20,6 +21,7 @@ struct PrimaryButton: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 52)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white)

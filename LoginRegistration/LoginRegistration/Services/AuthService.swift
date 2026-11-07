@@ -8,7 +8,11 @@ final class AuthService: AuthServiceProtocol, RegistrationServicing {
     private var registeredAccounts: [String: (user: User, password: String)] = [:]
 
     func login(email: String, password: String) async throws -> User {
-        try await Task.sleep(nanoseconds: 400_000_000)
+        let email = ValidationManager.normalizedEmail(email)
+        guard ValidationManager.isValidEmail(email), !password.isEmpty else {
+            throw AuthError.invalidCredentials
+        }
+        try await Task.sleep(for: .milliseconds(400))
 
         if email == validEmail, password == validPassword {
             return User(email: email, name: "Example")
@@ -21,7 +25,10 @@ final class AuthService: AuthServiceProtocol, RegistrationServicing {
     }
 
     func register(username: String, email: String, password: String) throws -> User {
-        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedEmail = ValidationManager.normalizedEmail(email)
+        guard ValidationManager.isValidUsername(username) else { throw RegistrationError.invalidUsername }
+        guard ValidationManager.isValidEmail(normalizedEmail) else { throw RegistrationError.invalidEmail }
+        guard ValidationManager.isValidPassword(password) else { throw RegistrationError.invalidPassword }
         guard normalizedEmail != validEmail, registeredAccounts[normalizedEmail] == nil else {
             throw RegistrationError.emailAlreadyRegistered
         }

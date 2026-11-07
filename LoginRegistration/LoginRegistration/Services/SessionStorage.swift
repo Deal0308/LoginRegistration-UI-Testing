@@ -20,12 +20,10 @@ final class SessionStore: SessionStoring {
         get { defaults.string(forKey: key) }
         set {
             defaults.set(newValue, forKey: key)
-            defaults.synchronize()
         }
     }
 
     func clear() {
         defaults.removeObject(forKey: key)
-        defaults.synchronize()
     }
 }

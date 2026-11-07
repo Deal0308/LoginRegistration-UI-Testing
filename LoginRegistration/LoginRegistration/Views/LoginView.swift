@@ -7,6 +7,7 @@ struct LoginView: View {
     @FocusState private var focusedField: Field?
     @State private var isPasswordVisible = false
     @State private var isRegistering = false
+    @State private var loginRequestID: UUID?
     private let registrationService: RegistrationServicing?
 
     init(authService: AuthServiceProtocol? = nil, sessionStore: SessionStoring? = nil) {
@@ -29,11 +30,12 @@ struct LoginView: View {
                         .padding(.top, 36)
 
                         VStack(spacing: 16) {
-                            emailInput
-                            passwordInput
+                            emailInput.disabled(isSubmitting)
+                            passwordInput.disabled(isSubmitting)
 
                             Toggle("Remember Me", isOn: $viewModel.rememberMe)
                                 .accessibilityIdentifier("remember_me_toggle")
+                                .disabled(isSubmitting)
 
                             if let errorMessage = viewModel.errorMessage {
                                 Text(errorMessage)
@@ -46,11 +48,9 @@ struct LoginView: View {
                             PrimaryButton(
                                 title: "Log In",
                                 systemImage: "arrow.right.circle.fill",
-                                isLoading: viewModel.isLoading
-                            ) {
-                                focusedField = nil
-                                Task { await viewModel.login() }
-                            }
+                                isLoading: isSubmitting,
+                                action: requestLogin
+                            )
                             .accessibilityIdentifier("login_button")
                         }
                         .padding(22)
@@ -62,6 +62,7 @@ struct LoginView: View {
                             Button("Create a new account") { isRegistering = true }
                                 .font(.callout.weight(.semibold))
                                 .accessibilityIdentifier("registrationNavigationButton")
+                                .disabled(isSubmitting)
                         }
                     }
                     .padding(.horizontal, 22)
@@ -69,6 +70,12 @@ struct LoginView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
+            .task(id: loginRequestID) {
+                guard let requestID = loginRequestID else { return }
+                await viewModel.login()
+                if loginRequestID == requestID { loginRequestID = nil }
+            }
+            .onDisappear { loginRequestID = nil }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -93,6 +100,14 @@ struct LoginView: View {
         }
     }
 
+    private var isSubmitting: Bool { loginRequestID != nil || viewModel.isLoading }
+
+    private func requestLogin() {
+        guard !isSubmitting else { return }
+        focusedField = nil
+        loginRequestID = UUID()
+    }
+
     private var emailInput: some View {
         HStack(spacing: 12) {
             Image(systemName: "envelope.fill").foregroundStyle(.secondary).frame(width: 22)
@@ -102,6 +117,8 @@ struct LoginView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .focused($focusedField, equals: .email)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .password }
                 .accessibilityIdentifier("email_field")
         }
         .padding(.horizontal, 16)
@@ -116,14 +133,17 @@ struct LoginView: View {
             Group {
                 if isPasswordVisible {
                     TextField("Password", text: $viewModel.password)
+                        .focused($focusedField, equals: .password)
                 } else {
                     SecureField("Password", text: $viewModel.password)
+                        .focused($focusedField, equals: .password)
                 }
             }
             .textContentType(.password)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
-            .focused($focusedField, equals: .password)
+            .submitLabel(.go)
+            .onSubmit(requestLogin)
             .accessibilityIdentifier("password_field")
 
             Button { isPasswordVisible.toggle() } label: {

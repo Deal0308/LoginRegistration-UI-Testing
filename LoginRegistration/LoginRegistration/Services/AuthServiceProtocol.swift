@@ -6,7 +6,7 @@ protocol AuthServiceProtocol {
     func login(email: String, password: String) async throws -> User
 }
 
-enum AuthError: Error, LocalizedError {
+nonisolated enum AuthError: Error, LocalizedError {
     case invalidCredentials
 
     var errorDescription: String? {

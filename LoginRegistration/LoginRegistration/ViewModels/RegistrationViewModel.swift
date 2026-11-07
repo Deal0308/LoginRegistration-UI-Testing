@@ -18,6 +18,7 @@ final class RegistrationViewModel: ObservableObject {
     }
 
     func register() {
+        guard !isLoading, registeredUser == nil else { return }
         errorMessage = ""
 
         guard ValidationManager.isValidUsername(username) else {

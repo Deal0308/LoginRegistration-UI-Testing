@@ -48,11 +48,11 @@ The app retains its `LoginRegistration` Xcode project and scheme names so existi
 
 ## Test coverage
 
-The shared scheme includes 20 unit tests and 8 UI tests. Unit coverage includes the class credentials and error, injected authentication, the exact session key, both logout modes, registration, validation, and Remember Me.
+The shared scheme includes 28 unit tests and 8 UI tests (36 total). Unit coverage includes the class credentials and error, injected authentication, the exact session key, both logout modes, registration, validation, and Remember Me.
 
 `LoginScreen`, `DashboardScreen`, and `RegistrationScreen` Page Objects centralize UI interactions. The UI suite covers invalid and successful login, logout, remembered email after relaunch, turning Remember Me off, correcting only a wrong password, registration, and launch. The logout test uses named activities and a screenshot attachment. Login, dashboard, and error screenshots are also retained as test attachments.
 
-Each independent test initially launches with `-UITesting` and `-UITesting-Reset`. Persistence checks remove only Reset before relaunch. Page Objects dismiss the software keyboard with the app's Done control and wait for its disappearance before tapping Log In. There are no fixed sleeps in UI tests.
+Each independent test initially launches with `-UITesting` and `-UITesting-Reset`. Persistence checks remove only Reset before relaunch. Page Objects dismiss the software keyboard with the app's Done control before tapping Log In. There are no fixed sleeps in UI tests.
 
 The professor's main branch has generated starter test placeholders. This project implements the exercise requirements instead of copying those placeholders.
 
@@ -70,3 +70,13 @@ The pipeline runs on pushes and pull requests to main, supports manual dispatch,
 ## Attribution
 
 The login model, service interfaces, session storage, async view-model flow, navigation pattern, identifiers, and sample account are adapted from Andres de la Cruz's course LoginKit project. The source comments mark these adaptations. The styling, registration extension, completed tests, and assignment documentation are Michael Deal's personalized version with AI assistance disclosed in the report.
+
+## Swift 6 logic safeguards
+
+The app and test targets use Swift 6 language mode with complete concurrency checking. Immutable User values are Sendable; UI state and service mutation are main-actor isolated. Login rejects duplicate requests, checks cancellation after suspension, and ignores responses invalidated by logout. The view ties login work to its lifetime using SwiftUI task(id:). Input and navigation controls are disabled while a request is pending.
+
+Email normalization and validation are shared between login and registration; registration also validates at the service boundary. UserDefaults persists automatically without synchronize(). Eight regression tests were run failing before these fixes and passing afterward, covering cancellation, overlapping requests, late replies after logout, remembered email consistency, malformed addresses, normalized class credentials, and invalid registration.
+
+The UI tests assert the resulting error or dashboard instead of requiring UIKit to remove an offscreen keyboard accessibility object. The cloud video demonstrated that the keyboard could be visually dismissed while that object remained in the tree.
+
+References: [Swift concurrency](https://docs.swift.org/swift-book/LanguageGuide/Concurrency.html), [Task cancellation](https://developer.apple.com/documentation/swift/task), [UserDefaults persistence](https://developer.apple.com/documentation/foundation/userdefaults/synchronize()).

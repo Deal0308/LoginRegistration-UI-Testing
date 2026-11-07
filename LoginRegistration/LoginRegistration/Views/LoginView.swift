@@ -76,11 +76,17 @@ struct LoginView: View {
                 if loginRequestID == requestID { loginRequestID = nil }
             }
             .onDisappear { loginRequestID = nil }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { focusedField = nil }
-                        .accessibilityIdentifier("dismiss_keyboard_button")
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if focusedField != nil {
+                    HStack {
+                        Spacer()
+                        Button("Done") { focusedField = nil }
+                            .fontWeight(.semibold)
+                            .accessibilityIdentifier("dismiss_keyboard_button")
+                    }
+                    .padding(.horizontal, 22)
+                    .frame(height: 44)
+                    .background(.regularMaterial)
                 }
             }
             .navigationDestination(item: $viewModel.loggedInUser) { user in

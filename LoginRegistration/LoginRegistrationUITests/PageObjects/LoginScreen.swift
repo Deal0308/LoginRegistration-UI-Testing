@@ -44,7 +44,8 @@ struct LoginScreen {
     }
 
     func submit() {
-        if !loginButton.isHittable {
+        // A partly exposed button can be hittable while its center is under the keyboard.
+        if app.keyboards.firstMatch.exists || !loginButton.isHittable {
             app.scrollViews.firstMatch.swipeUp()
         }
         loginButton.tap()
